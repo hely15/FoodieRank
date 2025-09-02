@@ -2,7 +2,8 @@ const express = require("express")
 const { requireAuth } = require("../middlewares/auth")
 const { validateReview, validateUpdateReview } = require("../middlewares/validators")
 const { asyncHandler } = require("../middlewares/errorHandler")
-const { Review } = require("../models/Review")
+const Review = require("../models/Review")
+const Dish = require("../models/Dish") // Import Dish model here
 
 const router = express.Router()
 
@@ -145,10 +146,44 @@ router.post(
   requireAuth,
   validateReview,
   asyncHandler(async (req, res) => {
+    console.log("[v0] req.user:", req.user)
+    console.log("[v0] req.body:", req.body)
+    console.log("[v0] req.user.id:", req.user?.id)
+    console.log("[v0] req.user._id:", req.user?._id)
+
+    let restaurantId
+
+    if (req.body.dish) {
+      // If reviewing a dish, get the restaurant ID from the dish
+      const dish = await Dish.findById(req.body.dish)
+      if (!dish) {
+        return res.status(404).json({
+          success: false,
+          message: "Plato no encontrado",
+        })
+      }
+      restaurantId = dish.restaurantId
+    } else if (req.body.restaurant) {
+      // If reviewing a restaurant directly
+      restaurantId = req.body.restaurant
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Debe especificar un restaurante o plato para la reseña",
+      })
+    }
+
     const reviewData = {
       ...req.body,
-      user: req.user.id,
+      userId: req.user._id || req.user.id, // Try both _id and id fields
+      restaurantId: restaurantId, // Use the resolved restaurant ID
     }
+
+    // Remove the original fields to avoid confusion
+    delete reviewData.restaurant
+    delete reviewData.user
+
+    console.log("[v0] Final reviewData:", reviewData)
 
     const review = await Review.create(reviewData)
 
@@ -246,14 +281,14 @@ router.put(
       })
     }
 
-    if (review.user !== req.user.id && req.user.role !== "admin") {
+    if (review.userId.toString() !== req.user.id && req.user.role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "No tienes permisos para actualizar esta reseña",
       })
     }
 
-    const updatedReview = await Review.update(id, req.body)
+    const updatedReview = await Review.updateById(id, req.body, req.user.id)
 
     res.json({
       success: true,
@@ -287,7 +322,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { id } = req.params
 
-    const review = await Review.addLike(id, req.user.id)
+    const review = await Review.addReaction(id, req.user.id, "like")
 
     res.json({
       success: true,
@@ -321,7 +356,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { id } = req.params
 
-    const review = await Review.addDislike(id, req.user.id)
+    const review = await Review.addReaction(id, req.user.id, "dislike")
 
     res.json({
       success: true,
@@ -364,14 +399,14 @@ router.delete(
       })
     }
 
-    if (review.user !== req.user.id && req.user.role !== "admin") {
+    if (review.userId.toString() !== req.user.id && req.user.role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "No tienes permisos para eliminar esta reseña",
       })
     }
 
-    await Review.delete(id)
+    await Review.deleteById(id, req.user.id)
 
     res.json({
       success: true,

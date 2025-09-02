@@ -2,7 +2,7 @@ const express = require("express")
 const { requireAuth, requireRole } = require("../middlewares/auth")
 const { validateRestaurant } = require("../middlewares/validators")
 const { asyncHandler } = require("../middlewares/errorHandler")
-const { Restaurant } = require("../models/Restaurant")
+const Restaurant = require("../models/Restaurant")
 
 const router = express.Router()
 

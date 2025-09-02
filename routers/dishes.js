@@ -2,7 +2,7 @@ const express = require("express")
 const { requireAuth, requireRole } = require("../middlewares/auth")
 const { validateDish, validateUpdateDish } = require("../middlewares/validators")
 const { asyncHandler } = require("../middlewares/errorHandler")
-const { Dish } = require("../models/Dish")
+const Dish = require("../models/Dish")
 
 const router = express.Router()
 
@@ -35,6 +35,18 @@ const router = express.Router()
  *         name: available
  *         schema:
  *           type: boolean
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
  *     responses:
  *       200:
  *         description: Lista de platos obtenida exitosamente
@@ -42,17 +54,19 @@ const router = express.Router()
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, restaurant, category, available } = req.query
+    const { page = 1, limit = 10, restaurant, category, available, search, minPrice, maxPrice } = req.query
 
-    const filter = {}
-    if (restaurant) filter.restaurant = restaurant
-    if (category) filter.category = category
-    if (available !== undefined) filter.available = available === "true"
-
-    const dishes = await Dish.findAll(filter, {
+    const options = {
       page: Number.parseInt(page),
       limit: Number.parseInt(limit),
-    })
+    }
+
+    if (search) options.search = search
+    if (minPrice) options.minPrice = minPrice
+    if (maxPrice) options.maxPrice = maxPrice
+    if (available !== undefined) options.available = available === "true"
+
+    const dishes = await Dish.findAll(options)
 
     res.json({
       success: true,
@@ -233,7 +247,6 @@ router.put(
   asyncHandler(async (req, res) => {
     const { id } = req.params
 
-    // Verificar permisos: solo admin o creador del plato
     const dish = await Dish.findById(id)
     if (!dish) {
       return res.status(404).json({
@@ -249,7 +262,7 @@ router.put(
       })
     }
 
-    const updatedDish = await Dish.update(id, req.body)
+    const updatedDish = await Dish.updateById(id, req.body)
 
     res.json({
       success: true,
@@ -283,7 +296,6 @@ router.delete(
   asyncHandler(async (req, res) => {
     const { id } = req.params
 
-    // Verificar permisos: solo admin o creador del plato
     const dish = await Dish.findById(id)
     if (!dish) {
       return res.status(404).json({
@@ -299,7 +311,16 @@ router.delete(
       })
     }
 
-    await Dish.delete(id)
+    console.log("[v0] Attempting to delete dish with ID:", id)
+    console.log("[v0] Dish.deleteById method exists:", typeof Dish.deleteById === "function")
+
+    try {
+      await Dish.deleteById(id)
+      console.log("[v0] Dish deletion successful")
+    } catch (error) {
+      console.log("[v0] Dish deletion error:", error.message)
+      throw error
+    }
 
     res.json({
       success: true,
