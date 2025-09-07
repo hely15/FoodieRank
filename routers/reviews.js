@@ -152,6 +152,7 @@ router.post(
     console.log("[v0] req.user._id:", req.user?._id)
 
     let restaurantId
+    let dishId = null // Initialize dishId variable
 
     if (req.body.dish) {
       // If reviewing a dish, get the restaurant ID from the dish
@@ -163,9 +164,11 @@ router.post(
         })
       }
       restaurantId = dish.restaurantId
+      dishId = req.body.dish // Store the dish ID for dish reviews
     } else if (req.body.restaurant) {
       // If reviewing a restaurant directly
       restaurantId = req.body.restaurant
+      // dishId remains null for restaurant reviews
     } else {
       return res.status(400).json({
         success: false,
@@ -177,11 +180,13 @@ router.post(
       ...req.body,
       userId: req.user._id || req.user.id, // Try both _id and id fields
       restaurantId: restaurantId, // Use the resolved restaurant ID
+      dishId: dishId, // Include dishId in review data
     }
 
     // Remove the original fields to avoid confusion
     delete reviewData.restaurant
     delete reviewData.user
+    delete reviewData.dish // Remove dish field since we now use dishId
 
     console.log("[v0] Final reviewData:", reviewData)
 

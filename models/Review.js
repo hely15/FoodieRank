@@ -6,6 +6,7 @@ class Review {
   constructor(reviewData) {
     this.userId = new ObjectId(reviewData.userId)
     this.restaurantId = new ObjectId(reviewData.restaurantId)
+    this.dishId = reviewData.dishId ? new ObjectId(reviewData.dishId) : null
     this.comment = reviewData.comment
     this.rating = reviewData.rating
     this.likes = 0
@@ -21,17 +22,31 @@ class Review {
     console.log("[v0] Creating review with data:", {
       userId: reviewData.userId,
       restaurantId: reviewData.restaurantId,
+      dishId: reviewData.dishId,
       rating: reviewData.rating,
     })
 
-    // Verificar que no exista una reseña del mismo usuario para el mismo restaurante
-    const existingReview = await db.collection("reviews").findOne({
-      userId: new ObjectId(reviewData.userId),
-      restaurantId: new ObjectId(reviewData.restaurantId),
-    })
+    if (reviewData.dishId) {
+      // Para reseñas de platos: solo verificar si ya reseñó este plato específico
+      const existingDishReview = await db.collection("reviews").findOne({
+        userId: new ObjectId(reviewData.userId),
+        dishId: new ObjectId(reviewData.dishId),
+      })
 
-    if (existingReview) {
-      throw new Error("Ya has reseñado este restaurante")
+      if (existingDishReview) {
+        throw new Error("Ya has reseñado este plato")
+      }
+    } else {
+      // Para reseñas de restaurante: verificar si ya reseñó el restaurante sin plato específico
+      const existingRestaurantReview = await db.collection("reviews").findOne({
+        userId: new ObjectId(reviewData.userId),
+        restaurantId: new ObjectId(reviewData.restaurantId),
+        dishId: null,
+      })
+
+      if (existingRestaurantReview) {
+        throw new Error("Ya has reseñado este restaurante")
+      }
     }
 
     // Verificar que el restaurante exista y esté aprobado
@@ -101,9 +116,19 @@ class Review {
           },
         },
         {
+          $lookup: {
+            from: "dishes",
+            localField: "dishId",
+            foreignField: "_id",
+            as: "dish",
+            pipeline: [{ $project: { name: 1, price: 1, image: 1 } }],
+          },
+        },
+        {
           $addFields: {
             user: { $arrayElemAt: ["$user", 0] },
             restaurant: { $arrayElemAt: ["$restaurant", 0] },
+            dish: { $arrayElemAt: ["$dish", 0] },
           },
         },
       ])
@@ -132,8 +157,18 @@ class Review {
         },
       },
       {
+        $lookup: {
+          from: "dishes",
+          localField: "dishId",
+          foreignField: "_id",
+          as: "dish",
+          pipeline: [{ $project: { name: 1, price: 1, image: 1 } }],
+        },
+      },
+      {
         $addFields: {
           user: { $arrayElemAt: ["$user", 0] },
+          dish: { $arrayElemAt: ["$dish", 0] },
         },
       },
       { $sort: sort },
@@ -178,8 +213,18 @@ class Review {
         },
       },
       {
+        $lookup: {
+          from: "dishes",
+          localField: "dishId",
+          foreignField: "_id",
+          as: "dish",
+          pipeline: [{ $project: { name: 1, price: 1, image: 1 } }],
+        },
+      },
+      {
         $addFields: {
           restaurant: { $arrayElemAt: ["$restaurant", 0] },
+          dish: { $arrayElemAt: ["$dish", 0] },
         },
       },
       { $sort: sort },
@@ -397,9 +442,19 @@ class Review {
         },
       },
       {
+        $lookup: {
+          from: "dishes",
+          localField: "dishId",
+          foreignField: "_id",
+          as: "dish",
+          pipeline: [{ $project: { name: 1, price: 1, image: 1 } }],
+        },
+      },
+      {
         $addFields: {
           user: { $arrayElemAt: ["$user", 0] },
           restaurant: { $arrayElemAt: ["$restaurant", 0] },
+          dish: { $arrayElemAt: ["$dish", 0] },
         },
       },
       { $sort: sort },

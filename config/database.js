@@ -69,7 +69,25 @@ const createIndexes = async () => {
     // Índices para reseñas
     await database.collection("reviews").createIndex({ restaurantId: 1 })
     await database.collection("reviews").createIndex({ userId: 1 })
-    await database.collection("reviews").createIndex({ userId: 1, restaurantId: 1 }, { unique: true })
+
+    // Index for dish reviews (when dishId exists)
+    await database.collection("reviews").createIndex(
+      { userId: 1, restaurantId: 1, dishId: 1 },
+      {
+        unique: true,
+        partialFilterExpression: { dishId: { $exists: true, $type: "objectId" } },
+      },
+    )
+
+    // Index for restaurant-only reviews (when dishId doesn't exist)
+    await database.collection("reviews").createIndex(
+      { userId: 1, restaurantId: 1 },
+      {
+        unique: true,
+        partialFilterExpression: { dishId: { $exists: false } },
+      },
+    )
+
     await database.collection("reviews").createIndex({ createdAt: -1 })
 
     // Índices para categorías

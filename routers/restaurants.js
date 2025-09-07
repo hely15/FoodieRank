@@ -42,19 +42,18 @@ const router = express.Router()
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const { page = 1, limit = 1000, category, city, approved = true } = req.query
+    const { page = 1, limit = 1000, category, city, approved = "true" } = req.query
 
-    const filter = { approved: approved === "true" }
-    if (category) filter.category = category
-    if (city) filter["location.city"] = new RegExp(city, "i")
-
-    // Si no se especifica límite o es muy alto, devolver todos
     const options = {
       page: Number.parseInt(page),
-      limit: limit === 'all' ? 1000 : Number.parseInt(limit)
+      limit: limit === "all" ? 1000 : Number.parseInt(limit),
+      approved: approved === "true" || approved === true,
     }
 
-    const restaurants = await Restaurant.findAll(filter, options)
+    if (category) options.category = category
+    if (city) options.search = city // Use search parameter for city filtering
+
+    const restaurants = await Restaurant.findAll(options)
 
     res.json({
       success: true,

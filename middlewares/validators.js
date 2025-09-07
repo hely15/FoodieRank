@@ -92,7 +92,16 @@ const validateReview = [
 
   body("rating").isInt({ min: 1, max: 5 }).withMessage("La calificación debe ser un número entero entre 1 y 5"),
 
-  body("restaurantId").isMongoId().withMessage("ID de restaurante inválido"),
+  body("restaurantId").optional().isMongoId().withMessage("ID de restaurante inválido"),
+
+  body("dish").optional().isMongoId().withMessage("ID de plato inválido"),
+
+  body().custom((value, { req }) => {
+    if (!req.body.restaurantId && !req.body.dish) {
+      throw new Error("Debe especificar un restaurante o plato para la reseña")
+    }
+    return true
+  }),
 ]
 
 // Validación para actualización de reseñas
