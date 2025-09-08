@@ -292,8 +292,8 @@ class Review {
     }
 
     // Eliminar reacciones asociadas a la reseña
-    await db.collection("reviewReactions").deleteMany({
-      reviewId: new ObjectId(id),
+    await db.collection("FavoritosRestaurantes").deleteMany({
+      FavRestaurant: new ObjectId(id),
     })
 
     // Eliminar la reseña
@@ -307,13 +307,13 @@ class Review {
     return result.deletedCount > 0
   }
 
-  // Dar like o dislike a una reseña
-  static async addReaction(reviewId, userId, reactionType) {
+  // Dar like a un plato
+  static async addReaction(FavRestaurant, userId) {
     const db = getDB()
 
     // Verificar que la reseña existe y no es del mismo usuario
     const review = await db.collection("reviews").findOne({
-      _id: new ObjectId(reviewId),
+      _id: new ObjectId(FavRestaurant),
     })
 
     if (!review) {
@@ -325,8 +325,8 @@ class Review {
     }
 
     // Verificar si ya existe una reacción del usuario
-    const existingReaction = await db.collection("reviewReactions").findOne({
-      reviewId: new ObjectId(reviewId),
+    const existingReaction = await db.collection("FavoritosRestaurantes").findOne({
+      FavRestaurant: new ObjectId(FavRestaurant),
       userId: new ObjectId(userId),
     })
 
@@ -336,8 +336,8 @@ class Review {
     if (existingReaction) {
       // Si la reacción es la misma, eliminarla
       if (existingReaction.type === reactionType) {
-        await db.collection("reviewReactions").deleteOne({
-          reviewId: new ObjectId(reviewId),
+        await db.collection("FavoritosRestaurantes").deleteOne({
+          FavRestaurant: new ObjectId(FavRestaurant),
           userId: new ObjectId(userId),
         })
 
@@ -348,9 +348,9 @@ class Review {
         }
       } else {
         // Cambiar el tipo de reacción
-        await db.collection("reviewReactions").updateOne(
+        await db.collection("FavoritosRestaurantes").updateOne(
           {
-            reviewId: new ObjectId(reviewId),
+            FavRestaurant: new ObjectId(FavRestaurant),
             userId: new ObjectId(userId),
           },
           {
@@ -371,8 +371,8 @@ class Review {
       }
     } else {
       // Crear nueva reacción
-      await db.collection("reviewReactions").insertOne({
-        reviewId: new ObjectId(reviewId),
+      await db.collection("FavoritosRestaurantes").insertOne({
+        favoriteRestaurandId: new ObjectId(FavRestaurant),
         userId: new ObjectId(userId),
         type: reactionType,
         createdAt: new Date(),
@@ -388,7 +388,7 @@ class Review {
     // Actualizar contadores en la reseña
     const updatedReview = await db.collection("reviews").findOneAndUpdate(
       {
-        _id: new ObjectId(reviewId),
+        _id: new ObjectId(FavRestaurant),
       },
       {
         $inc: {
@@ -405,11 +405,11 @@ class Review {
   }
 
   // Obtener reacción de un usuario a una reseña
-  static async getUserReaction(reviewId, userId) {
+  static async getUserReaction(FavRestaurant, userId) {
     const db = getDB()
 
-    return await db.collection("reviewReactions").findOne({
-      reviewId: new ObjectId(reviewId),
+    return await db.collection("FavoritosRestaurantes").findOne({
+      FavRestaurant: new ObjectId(FavRestaurant),
       userId: new ObjectId(userId),
     })
   }

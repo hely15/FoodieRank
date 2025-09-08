@@ -1,3 +1,5 @@
+const { post } = require("../routers/restaurants")
+
 const swaggerDocument = {
   openapi: "3.0.0",
   info: {
@@ -430,6 +432,44 @@ const swaggerDocument = {
           404: { $ref: "#/components/responses/NotFound" },
         },
       },
+    },
+    "/api/v1/FavRestaurant": {
+      post: {
+        tags: ["Restaurantes Favoritos"],
+        summary: "Agregar o quitar restaurante de favoritos",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  restaurantId: { type: "string", example: "507f1f77bcf86cd799439011" },
+                  userId: { type: "string", example: "507f1f77bcf86cd799439011" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Restaurante marcado como favorito",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string", example: "Restaurante marcado como favorito" },
+                  },
+                },
+              },
+            },
+          },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      }
     },
     "/api/v1/reviews": {
       get: {

@@ -93,15 +93,15 @@ const createIndexes = async () => {
     // Índices para categorías
     await database.collection("categories").createIndex({ name: 1 }, { unique: true })
 
-    // Índices para likes/dislikes de reseñas
-    await database.collection("reviewReactions").createIndex({ reviewId: 1, userId: 1 }, { unique: true })
-    await database.collection("reviewReactions").createIndex({ reviewId: 1 })
+    // indices para restaurantes favoritos 
+    await database.collection("FavoritosRestaurantes").createIndex({ restaurantId: 1, userId: 1 }, { unique: true })
+    await database.collection("FavoritosRestaurantes").createIndex({ restaurantId: 1 })
 
     console.log("Índices de base de datos creados correctamente")
   } catch (error) {
     console.error("Error creando índices:", error)
   }
-}
+} 
 
 module.exports = {
   connectDB,

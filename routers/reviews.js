@@ -322,12 +322,13 @@ router.put(
  *         description: Like agregado exitosamente
  */
 router.post(
-  "/:id/like",
+  "/api/v1/FavoriteRestaurant",
   requireAuth,
   asyncHandler(async (req, res) => {
     const { id } = req.params
+    const { FavRestaurant } = req.params
 
-    const review = await Review.addReaction(id, req.user.id, "like")
+    const review = await Review.addReaction(id, FavRestaurant, req.user.id, req.restaurant.id,  "like")
 
     res.json({
       success: true,
